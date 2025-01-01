@@ -93,7 +93,7 @@ namespace vcpkg
             void add_feature(const std::string& feature,
                              const CMakeVars::CMakeVarProvider& var_provider,
                              std::vector<FeatureSpec>& out_new_dependencies,
-                             Triplet host_triplet)
+                             Triplet host_triplet, bool with_host)
             {
                 const auto& scfl = get_scfl_or_exit();
 
@@ -237,6 +237,8 @@ namespace vcpkg
                     }
                     else
                     {
+                        if (!with_host)
+                            Util::erase_remove_if(dep_list, [](FeatureSpec& f) { return f.host; });
                         info.build_edges.emplace(feature, dep_list);
                     }
                 }
@@ -339,7 +341,7 @@ namespace vcpkg
                          const Path& packages_dir);
             ~PackageGraph() = default;
 
-            void install(Span<const FeatureSpec> specs, UnsupportedPortAction unsupported_port_action);
+            void install(Span<const FeatureSpec> specs, UnsupportedPortAction unsupported_port_action, bool with_host);
             void upgrade(Span<const PackageSpec> specs, UnsupportedPortAction unsupported_port_action);
             void mark_user_requested(const PackageSpec& spec);
 
@@ -773,7 +775,7 @@ namespace vcpkg
         }
         Util::sort_unique_erase(feature_specs);
 
-        pgraph.install(feature_specs, options.unsupported_port_action);
+        pgraph.install(feature_specs, options.unsupported_port_action, options.with_host);
 
         return pgraph.serialize(
             options.randomizer, options.use_head_version_if_user_requested, options.editable_if_user_requested);
@@ -805,7 +807,7 @@ namespace vcpkg
     }
 
     /// The list of specs to install should already have default features expanded
-    void PackageGraph::install(Span<const FeatureSpec> specs, UnsupportedPortAction unsupported_port_action)
+    void PackageGraph::install(Span<const FeatureSpec> specs, UnsupportedPortAction unsupported_port_action, bool with_host)
     {
         // We batch resolving qualified dependencies, because it's an invocation of CMake which
         // takes ~150ms per call.
@@ -904,14 +906,14 @@ namespace vcpkg
 
                 if (clust.m_install_info.has_value())
                 {
-                    clust.add_feature(spec.feature(), m_var_provider, next_dependencies, m_graph->m_host_triplet);
+                    clust.add_feature(spec.feature(), m_var_provider, next_dependencies, m_graph->m_host_triplet, with_host);
                 }
                 else
                 {
                     if (!clust.m_installed.has_value())
                     {
                         clust.create_install_info(next_dependencies);
-                        clust.add_feature(spec.feature(), m_var_provider, next_dependencies, m_graph->m_host_triplet);
+                        clust.add_feature(spec.feature(), m_var_provider, next_dependencies, m_graph->m_host_triplet, with_host);
                     }
                     else
                     {
@@ -933,7 +935,7 @@ namespace vcpkg
                             // the port if the feature isn't already present.
                             mark_for_reinstall(spec.spec(), next_dependencies);
                             clust.add_feature(
-                                spec.feature(), m_var_provider, next_dependencies, m_graph->m_host_triplet);
+                                spec.feature(), m_var_provider, next_dependencies, m_graph->m_host_triplet, with_host);
                         }
                     }
                 }
@@ -969,7 +971,7 @@ namespace vcpkg
 
         Util::sort_unique_erase(reinstall_reqs);
 
-        install(reinstall_reqs, unsupported_port_action);
+        install(reinstall_reqs, unsupported_port_action, true);
     }
 
     ActionPlan create_upgrade_plan(const PortFileProvider& port_provider,

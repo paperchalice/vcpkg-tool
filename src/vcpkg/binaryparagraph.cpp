@@ -12,7 +12,7 @@ using namespace vcpkg::Paragraphs;
 namespace vcpkg
 {
     BinaryParagraph::BinaryParagraph(StringView origin, Paragraph&& fields)
-        : spec(), version(), description(), maintainers(), feature(), default_features(), dependencies(), abi()
+        : spec(), version(), description(), maintainers(), feature(), default_features(), dependencies(), build_dependencies(), abi()
     {
         ParagraphParser parser(origin, std::move(fields));
         this->spec = PackageSpec(parser.required_field(ParagraphIdPackage),
@@ -46,9 +46,24 @@ namespace vcpkg
 
         Triplet my_triplet = this->spec.triplet();
         auto maybe_depends_field = parser.optional_field(ParagraphIdDepends);
+        auto maybe_build_depends_field = parser.optional_field(ParagraphIdBuildDepends);
         if (auto depends_field = maybe_depends_field.get())
         {
             this->dependencies = Util::fmap(
+                parse_qualified_specifier_list(std::move(depends_field->first), origin, depends_field->second)
+                    .value_or_exit(VCPKG_LINE_INFO),
+                [my_triplet](const ParsedQualifiedSpecifier& dep) {
+                    // for compatibility with previous vcpkg versions, we discard all irrelevant information
+                    return PackageSpec{
+                        dep.name,
+                        dep.triplet.map([](auto&& s) { return Triplet::from_canonical_name(std::string(s)); })
+                            .value_or(my_triplet),
+                    };
+                });
+        }
+        if (auto depends_field = maybe_build_depends_field.get())
+        {
+            this->build_dependencies = Util::fmap(
                 parse_qualified_specifier_list(std::move(depends_field->first), origin, depends_field->second)
                     .value_or_exit(VCPKG_LINE_INFO),
                 [my_triplet](const ParsedQualifiedSpecifier& dep) {
@@ -92,7 +107,8 @@ namespace vcpkg
                                      const std::vector<std::string>& default_features,
                                      Triplet triplet,
                                      const std::string& abi_tag,
-                                     std::vector<PackageSpec> deps)
+                                     std::vector<PackageSpec> deps,
+                                     std::vector<PackageSpec> bdeps)
         : spec(spgh.name, triplet)
         , version(spgh.version)
         , description(spgh.description)
@@ -100,6 +116,7 @@ namespace vcpkg
         , feature()
         , default_features(default_features)
         , dependencies(std::move(deps))
+        , build_dependencies(std::move(bdeps))
         , abi(abi_tag)
     {
         canonicalize();
@@ -107,7 +124,8 @@ namespace vcpkg
 
     BinaryParagraph::BinaryParagraph(const PackageSpec& spec,
                                      const FeatureParagraph& fpgh,
-                                     std::vector<PackageSpec> deps)
+                                     std::vector<PackageSpec> deps,
+                                     std::vector<PackageSpec> bdeps)
         : spec(spec)
         , version()
         , description(fpgh.description)
@@ -115,6 +133,7 @@ namespace vcpkg
         , feature(fpgh.name)
         , default_features()
         , dependencies(std::move(deps))
+        , build_dependencies(std::move(bdeps))
         , abi()
     {
         canonicalize();
@@ -233,6 +252,12 @@ namespace vcpkg
         {
             append_paragraph_field(
                 ParagraphIdDepends, serialize_deps_list(pgh.dependencies, pgh.spec.triplet()), out_str);
+        }
+
+        if (!pgh.build_dependencies.empty())
+        {
+            append_paragraph_field(
+                ParagraphIdBuildDepends, serialize_deps_list(pgh.build_dependencies, pgh.spec.triplet()), out_str);
         }
 
         append_paragraph_field(ParagraphIdArchitecture, pgh.spec.triplet().to_string(), out_str);

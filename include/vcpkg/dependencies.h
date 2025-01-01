@@ -130,13 +130,15 @@ namespace vcpkg
                                  const Path& packages_dir,
                                  UnsupportedPortAction action,
                                  UseHeadVersion use_head_version_if_user_requested,
-                                 Editable editable_if_user_requested)
+                                 Editable editable_if_user_requested,
+                                 bool with_host = true)
             : randomizer(randomizer)
             , host_triplet(host_triplet)
             , packages_dir(packages_dir)
             , unsupported_port_action(action)
             , use_head_version_if_user_requested(use_head_version_if_user_requested)
             , editable_if_user_requested(editable_if_user_requested)
+            , with_host(with_host)
         {
         }
 
@@ -146,6 +148,7 @@ namespace vcpkg
         UnsupportedPortAction unsupported_port_action;
         UseHeadVersion use_head_version_if_user_requested;
         Editable editable_if_user_requested;
+        bool with_host;
     };
 
     struct CreateUpgradePlanOptions

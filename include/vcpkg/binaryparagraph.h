@@ -17,8 +17,10 @@ namespace vcpkg
                         const std::vector<std::string>& default_features,
                         Triplet triplet,
                         const std::string& abi_tag,
-                        std::vector<PackageSpec> deps);
-        BinaryParagraph(const PackageSpec& spec, const FeatureParagraph& fpgh, std::vector<PackageSpec> deps);
+                        std::vector<PackageSpec> deps,
+                        std::vector<PackageSpec> bdeps);
+        BinaryParagraph(const PackageSpec& spec, const FeatureParagraph& fpgh, std::vector<PackageSpec> deps,
+                        std::vector<PackageSpec> bdeps);
 
         void canonicalize();
 
@@ -37,6 +39,7 @@ namespace vcpkg
         std::string feature;
         std::vector<std::string> default_features;
         std::vector<PackageSpec> dependencies;
+        std::vector<PackageSpec> build_dependencies;
         std::string abi;
     };
 

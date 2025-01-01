@@ -600,7 +600,18 @@ namespace vcpkg
     {
         std::set<PackageSpec> set;
         for (auto&& f : fspecs)
-            set.insert(f.spec());
+            if (!f.host)
+                set.insert(f.spec());
+        std::vector<PackageSpec> ret{set.begin(), set.end()};
+        return ret;
+    }
+
+    static std::vector<PackageSpec> fspecs_to_bpspecs(View<FeatureSpec> fspecs)
+    {
+        std::set<PackageSpec> set;
+        for (auto&& f : fspecs)
+            if (f.host)
+                set.insert(f.spec());
         std::vector<PackageSpec> ret{set.begin(), set.end()};
         return ret;
     }
@@ -618,7 +629,8 @@ namespace vcpkg
                              action.default_features.value_or_exit(VCPKG_LINE_INFO),
                              action.spec.triplet(),
                              action.public_abi(),
-                             fspecs_to_pspecs(find_itr->second));
+                             fspecs_to_pspecs(find_itr->second),
+                             fspecs_to_bpspecs(find_itr->second));
         if (const auto p_ver = build_info.detected_head_version.get())
         {
             bpgh.version = *p_ver;
@@ -633,7 +645,8 @@ namespace vcpkg
             auto maybe_fpgh = scfl.source_control_file->find_feature(feature);
             if (auto fpgh = maybe_fpgh.get())
             {
-                bcf->features.emplace_back(action.spec, *fpgh, fspecs_to_pspecs(find_itr->second));
+                bcf->features.emplace_back(action.spec, *fpgh, fspecs_to_pspecs(find_itr->second),
+                                fspecs_to_bpspecs(find_itr->second));
             }
         }
         return bcf;

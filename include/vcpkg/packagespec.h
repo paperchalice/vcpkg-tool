@@ -61,8 +61,8 @@ namespace vcpkg
     ///
     struct FeatureSpec
     {
-        FeatureSpec(const PackageSpec& spec, StringView feature)
-            : m_spec(spec), m_feature(feature.data(), feature.size())
+        FeatureSpec(const PackageSpec& spec, StringView feature, bool host = false)
+            : m_spec(spec), m_feature(feature.data(), feature.size()), host(host)
         {
         }
 
@@ -91,6 +91,9 @@ namespace vcpkg
 
         bool operator!=(const FeatureSpec& other) const { return !(*this == other); }
 
+        // For build only dependencies.
+        bool host = false;
+
     private:
         PackageSpec m_spec;
         std::string m_feature;
@@ -118,9 +121,10 @@ namespace vcpkg
     {
         PackageSpec package_spec;
         InternalFeatureSet features;
+        bool host;
 
-        FullPackageSpec(PackageSpec spec, InternalFeatureSet features)
-            : package_spec(std::move(spec)), features(std::move(features))
+        FullPackageSpec(PackageSpec spec, InternalFeatureSet features, bool host = false)
+            : package_spec(std::move(spec)), features(std::move(features)), host(host)
         {
         }
 

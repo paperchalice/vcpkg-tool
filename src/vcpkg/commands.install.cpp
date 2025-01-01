@@ -645,6 +645,7 @@ namespace vcpkg
         {SwitchXProhibitBackcompatFeatures, {}},
         {SwitchAllowUnsupported, msgHelpTxtOptAllowUnsupportedPort},
         {SwitchNoPrintUsage, msgHelpTxtOptNoUsage},
+        {"with-build-dep", msgHelpTxtOptNoUsage},
     };
 
     static constexpr CommandSetting INSTALL_SETTINGS[] = {
@@ -1059,6 +1060,7 @@ namespace vcpkg
                                                  ? UnsupportedPortAction::Warn
                                                  : UnsupportedPortAction::Error;
         const bool print_cmake_usage = !Util::Sets::contains(options.switches, SwitchNoPrintUsage);
+        const bool with_build_dep = Util::Sets::contains(options.switches, "with-build-dep");
 
         get_global_metrics_collector().track_bool(BoolMetric::InstallManifestMode, manifest);
 
@@ -1131,7 +1133,8 @@ namespace vcpkg
                                                       paths.packages(),
                                                       unsupported_port_action,
                                                       Util::Enum::to_enum<UseHeadVersion>(use_head_version),
-                                                      Util::Enum::to_enum<Editable>(is_editable)};
+                                                      Util::Enum::to_enum<Editable>(is_editable),
+                                                      with_build_dep};
 
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
