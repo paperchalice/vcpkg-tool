@@ -2250,7 +2250,7 @@ namespace vcpkg
             }
             if (!s.archives_to_write.empty())
             {
-                ret.write.push_back(std::make_unique<FilesWriteBinaryProvider>(fs, std::move(s.archives_to_write)));
+                // ret.write.push_back(std::make_unique<FilesWriteBinaryProvider>(fs, std::move(s.archives_to_write)));
             }
             if (!s.url_templates_to_put.empty())
             {
