@@ -115,7 +115,7 @@ namespace vcpkg
     {
         for (auto&& feature : features)
         {
-            out.emplace_back(package_spec, feature);
+            out.emplace_back(package_spec, feature, host);
         }
     }
 

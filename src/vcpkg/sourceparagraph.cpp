@@ -50,7 +50,7 @@ namespace vcpkg
         {
             internal_feature_list.emplace_back(FeatureNameDefault.data(), FeatureNameDefault.size());
         }
-        return FullPackageSpec{{name, host ? host_triplet : target}, std::move(internal_feature_list)};
+        return FullPackageSpec{{name, host ? host_triplet : target}, std::move(internal_feature_list), host};
     }
 
     bool operator==(const Dependency& lhs, const Dependency& rhs)
