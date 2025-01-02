@@ -312,6 +312,8 @@ namespace vcpkg
             status_db->insert(std::make_unique<StatusParagraph>(feature_paragraph));
         }
 
+        fs.remove_all(package_dir, VCPKG_LINE_INFO);
+
         return InstallResult::SUCCESS;
     }
 

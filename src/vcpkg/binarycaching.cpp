@@ -26,6 +26,7 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
+#include <filesystem>
 #include <memory>
 #include <utility>
 
@@ -378,6 +379,59 @@ namespace
 
     private:
         Path m_dir;
+    };
+
+    struct MyFilesReadBinaryProvider : FilesReadBinaryProvider {
+        using FilesReadBinaryProvider::FilesReadBinaryProvider;
+
+        void acquire_zips(View<const InstallPlanAction*> actions,
+                          Span<Optional<ZipResource>> out_zip_paths) const override
+        {
+            for (size_t i = 0; i < actions.size(); ++i)
+            {
+                // Don't use local bin cache on GitHub action.
+                std::string download_root = get_environment_variable("MY_DOWNLOAD_ROOT").value_or("");
+                if (get_environment_variable("GITHUB_USER").has_value() || download_root.empty())
+                    continue;
+                auto pkg_dir = actions[i]->package_dir.value_or_exit(VCPKG_LINE_INFO).native();
+                Path archive_path = pkg_dir + ".tar.xz";
+                if (!m_fs.exists(archive_path, IgnoreErrors{}))
+                {
+                    {
+                        Command cmd;
+                        cmd.string_arg("curl")
+                            .string_arg("-I")
+                            .string_arg("-s")
+                            .string_arg("-x")
+                            .string_arg("http://127.0.0.1:7890")
+                            .string_arg("-f")
+                            .string_arg(fmt::format("{}/{}", download_root, archive_path.filename()));
+                        auto exit_c = cmd_execute(cmd).value_or(1);
+                        if (exit_c != 0)
+                            continue;
+                    }
+                    Command download_cmd;
+                    download_cmd.string_arg("curl")
+                        .string_arg("-x")
+                        .string_arg("http://127.0.0.1:7890")
+                        .string_arg("-L")
+                        .string_arg("-O")
+                        .string_arg(fmt::format("{}/{}", download_root, archive_path.filename()));
+                    ProcessLaunchSettings settings;
+                    settings.working_directory = archive_path.parent_path();
+                    auto exit_c = cmd_execute(download_cmd, settings).value_or(1);
+                    if (exit_c != 0)
+                        continue;
+                }
+                if (m_fs.exists(archive_path, IgnoreErrors{}))
+                {
+                    out_zip_paths[i].emplace(std::move(archive_path), RemoveWhen::nothing);
+                    pkg_dirs.push_back(pkg_dir);
+                }
+            }
+        }
+
+        mutable std::vector<std::string> pkg_dirs;
     };
 
     struct HTTPPutBinaryProvider : IWriteBinaryProvider
@@ -2214,7 +2268,7 @@ namespace vcpkg
 
                 for (auto&& dir : s.archives_to_read)
                 {
-                    ret.read.push_back(std::make_unique<FilesReadBinaryProvider>(zip_tool, fs, std::move(dir)));
+                    ret.read.push_back(std::make_unique<MyFilesReadBinaryProvider>(zip_tool, fs, std::move(dir)));
                 }
 
                 for (auto&& url : s.url_templates_to_get)
