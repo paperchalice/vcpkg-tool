@@ -365,6 +365,16 @@ namespace vcpkg
     {
         Command cmd;
 #if defined(_WIN32)
+        if (archive_path.extension() == ".xz")
+        {
+            std::string cmd_content = fmt::format("{} x -so {} | tar -C {} -xf -",
+                seven_zip, archive_path, dst);
+            cmd.string_arg("cmd.exe")
+                .string_arg("/c")
+                .string_arg(cmd_content);
+            
+            return cmd;
+        }
         cmd.string_arg(seven_zip)
             .string_arg("x")
             .string_arg(archive_path)
