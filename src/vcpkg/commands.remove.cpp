@@ -148,6 +148,7 @@ namespace
         {SwitchRecurse, msgCmdRemoveOptRecurse},
         {SwitchDryRun, msgCmdRemoveOptDryRun},
         {SwitchOutdated, msgCmdRemoveOptOutdated},
+        {SwitchForce, {}},
     };
 
     std::vector<std::string> valid_arguments(const VcpkgPaths& paths)
@@ -225,6 +226,7 @@ namespace vcpkg
         const Purge purge = Util::Sets::contains(options.switches, SwitchPurge) ? Purge::YES : Purge::NO;
         const bool is_recursive = Util::Sets::contains(options.switches, SwitchRecurse);
         const bool dry_run = Util::Sets::contains(options.switches, SwitchDryRun);
+        const bool is_force = Util::Sets::contains(options.switches, SwitchForce);
 
         const auto plan = create_remove_plan(specs, status_db);
 
@@ -239,7 +241,7 @@ namespace vcpkg
         {
             msg::println_warning(msgAdditionalPackagesToRemove);
 
-            if (!is_recursive)
+            if (!is_recursive && !is_force)
             {
                 msg::println_warning(msg::format(msgAddRecurseOption)
                                          .append_raw('\n')
@@ -291,6 +293,8 @@ namespace vcpkg
         for (std::size_t idx = 0; idx < plan.remove.size(); ++idx)
         {
             const RemovePlanAction& action = plan.remove[idx];
+            if (is_force && action.request_type != RequestType::USER_REQUESTED)
+                continue;
             msg::println(msgRemovingPackage,
                          msg::action_index = idx + 1,
                          msg::count = plan.remove.size(),
