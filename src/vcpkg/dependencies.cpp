@@ -1181,11 +1181,11 @@ namespace vcpkg
                 auto p_installed = graph->get(dep).m_installed.get();
                 if (p_installed == nullptr)
                 {
-                    Checks::msg_exit_with_error(
-                        VCPKG_LINE_INFO,
+                    msg::println_warning(
                         msg::format(msgCorruptedDatabase)
                             .append_raw('\n')
                             .append(msgMissingDependency, msg::spec = ipv.spec(), msg::package_name = dep));
+                    continue;
                 }
 
                 p_installed->remove_edges.emplace(ipv.spec());
