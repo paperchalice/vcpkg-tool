@@ -312,8 +312,6 @@ namespace vcpkg
             status_db->insert(std::make_unique<StatusParagraph>(feature_paragraph));
         }
 
-        fs.remove_all(package_dir, VCPKG_LINE_INFO);
-
         return InstallResult::SUCCESS;
     }
 
@@ -1050,7 +1048,8 @@ namespace vcpkg
         const bool clean_after_build = Util::Sets::contains(options.switches, (SwitchCleanAfterBuild));
         const bool clean_buildtrees_after_build =
             Util::Sets::contains(options.switches, (SwitchCleanBuildtreesAfterBuild));
-        const bool clean_packages_after_build = Util::Sets::contains(options.switches, (SwitchCleanPackagesAfterBuild));
+        const bool clean_packages_after_build = Util::Sets::contains(options.switches, (SwitchCleanPackagesAfterBuild)) ||
+                                                !get_environment_variable(EnvironmentVariableGitHubActions).has_value();
         const bool clean_downloads_after_build =
             Util::Sets::contains(options.switches, (SwitchCleanDownloadsAfterBuild));
         const KeepGoing keep_going =

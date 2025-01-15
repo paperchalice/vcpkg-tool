@@ -391,7 +391,10 @@ namespace
             {
                 // Don't use local bin cache on GitHub action.
                 std::string download_root = get_environment_variable("MY_DOWNLOAD_ROOT").value_or("");
-                if (get_environment_variable("GITHUB_USER").has_value() || download_root.empty())
+                const bool is_github_action = get_environment_variable(EnvironmentVariableGitHubActions).has_value();
+                if (download_root.empty())
+                    continue;
+                if (is_github_action && actions[i]->request_type == RequestType::USER_REQUESTED)
                     continue;
                 auto pkg_dir = actions[i]->package_dir.value_or_exit(VCPKG_LINE_INFO).native();
                 Path archive_path = pkg_dir + ".tar.xz";
