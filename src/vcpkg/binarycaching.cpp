@@ -400,31 +400,16 @@ namespace
                 Path archive_path = pkg_dir + ".tar.xz";
                 if (!m_fs.exists(archive_path, IgnoreErrors{}))
                 {
+                    auto const url = [&](std::string l) -> auto { return std::pair(l, archive_path); };
+                    auto expected_r = download_files(std::vector{url(fmt::format("{}/{}", download_root, archive_path.filename()))}, {}, {});
+                    for(const auto &e : expected_r)
                     {
-                        Command cmd;
-                        cmd.string_arg("curl")
-                            .string_arg("-I")
-                            .string_arg("-s")
-                            .string_arg("-x")
-                            .string_arg("http://127.0.0.1:7890")
-                            .string_arg("-f")
-                            .string_arg(fmt::format("{}/{}", download_root, archive_path.filename()));
-                        auto exit_c = cmd_execute(cmd).value_or(1);
-                        if (exit_c != 0)
-                            continue;
+                        if (e.value_or(404) == 404)
+                        {
+                            msg::println(LocalizedString::from_raw("Resource not found in url."));
+                            m_fs.remove(archive_path, VCPKG_LINE_INFO);
+                        }
                     }
-                    Command download_cmd;
-                    download_cmd.string_arg("curl")
-                        .string_arg("-x")
-                        .string_arg("http://127.0.0.1:7890")
-                        .string_arg("-L")
-                        .string_arg("-O")
-                        .string_arg(fmt::format("{}/{}", download_root, archive_path.filename()));
-                    ProcessLaunchSettings settings;
-                    settings.working_directory = archive_path.parent_path();
-                    auto exit_c = cmd_execute(download_cmd, settings).value_or(1);
-                    if (exit_c != 0)
-                        continue;
                 }
                 if (m_fs.exists(archive_path, IgnoreErrors{}))
                 {
