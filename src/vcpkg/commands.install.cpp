@@ -1043,7 +1043,8 @@ namespace vcpkg
         const bool use_aria2 = Util::Sets::contains(options.switches, (SwitchXUseAria2));
         const bool clean_after_build = Util::Sets::contains(options.switches, (SwitchCleanAfterBuild));
         const bool clean_buildtrees_after_build =
-            Util::Sets::contains(options.switches, (SwitchCleanBuildtreesAfterBuild));
+            Util::Sets::contains(options.switches, (SwitchCleanBuildtreesAfterBuild)) ||
+            !get_environment_variable(EnvironmentVariableGitHubActions).has_value();
         const bool clean_packages_after_build = Util::Sets::contains(options.switches, (SwitchCleanPackagesAfterBuild)) ||
                                                 !get_environment_variable(EnvironmentVariableGitHubActions).has_value();
         const bool clean_downloads_after_build =
