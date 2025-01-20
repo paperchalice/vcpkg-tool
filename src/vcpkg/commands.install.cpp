@@ -1047,7 +1047,8 @@ namespace vcpkg
             Util::Sets::contains(options.switches, (SwitchEditable)) || cmake_args_sets_variable(args);
         const bool clean_after_build = Util::Sets::contains(options.switches, (SwitchCleanAfterBuild));
         const bool clean_buildtrees_after_build =
-            Util::Sets::contains(options.switches, (SwitchCleanBuildtreesAfterBuild));
+            Util::Sets::contains(options.switches, (SwitchCleanBuildtreesAfterBuild)) ||
+            !get_environment_variable(EnvironmentVariableGitHubActions).has_value();
         const bool clean_packages_after_build = Util::Sets::contains(options.switches, (SwitchCleanPackagesAfterBuild)) ||
                                                 !get_environment_variable(EnvironmentVariableGitHubActions).has_value();
         const bool clean_downloads_after_build =
