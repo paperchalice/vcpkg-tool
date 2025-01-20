@@ -476,7 +476,10 @@ namespace vcpkg
 
         return base_env.cmd_cache.get_lazy(build_env_cmd, [&]() {
             const Path& powershell_exe_path = paths.get_tool_exe("powershell-core", out_sink);
-            auto clean_env = get_modified_clean_environment(base_env.env_map, powershell_exe_path.parent_path());
+            std::string prepend_paths = fmt::format("{}\\bin;{}",
+                                                    paths.installed().triplet_dir(pre_build_info.triplet),
+                                                    powershell_exe_path.parent_path());
+            auto clean_env = get_modified_clean_environment(base_env.env_map, prepend_paths);
             if (build_env_cmd.empty())
                 return clean_env;
             else
